@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup as bs
 from itertools import chain
 import json
 import pymongo
@@ -29,21 +29,26 @@ class Scraper():
                 }
 
         response = requests.get("https://arriva.si/vozni-redi/?", params = params)
-        soup = BeautifulSoup(response.text, features = "html.parser")
+        soup = bs(response.text, features = "html.parser")
 
-        for odhod in soup.find_all("div", {"class": "connection"}):
+        for odhod in soup.select(".collapse.display-path"):
             if "connection-header" in odhod["class"]:
                 continue
-            yield {
+            data_odhod = json.loads(odhod["data-args"])
+
+            yield =  {
                     "details_url": None,
                     "tickets_url": None,
-                    "arrival": odhod.find(class_="arrival").get_text().strip(),
-                    "departure": odhod.find(class_="departure").get_text().strip(),
-                    "departure_station_name": None,
-                    "destination_station_name": None,
-                    "duration": odhod.find(class_="travel-duration").get_text().strip(),
-                    "online_ticket_avalible": None,
-                    "url": response.url
+                    "arrival": data_odhod["ROD_IPRI"],
+                    "departure": data_odhod["ROD_IODH"],
+                    "departure_station_name": self.get_arriva_station_name(fromId),
+                    "destination_station_name": self.get_arriva_station_name(toId),
+                    "duration": data_odhod["ROD_CAS"],
+                    "online_ticket_avalible": False,
+                    "url": response.url,
+                    "route_name": data_odhod["RPR_NAZ"],
+                    "length": data_odhod["ROD_KM"],
+                    "price": data_odhod["VZCL_CEN"]
             }
 
     def scrape_aplj(self, fromId, toId, date):
@@ -55,11 +60,15 @@ class Scraper():
                 }
 
         response = requests.get("https://www.ap-ljubljana.si/vozni-red/?", params = params)
-        soup = BeautifulSoup(response.text, features = "html.parser")
+        soup = bs(response.text, features = "html.parser")
 
         for odhod in soup.find_all("odhod"):
             if odhod["je-mednarodni"] == "True":
                 continue
+
+            details = bs(requests.get("https://www.ap-ljubljana.si/" + odhod["request-details-url"]).text, features="html.parser")
+            details_list = list(filter(lambda x: x, details.text.strip().split("\n")))
+
             yield {
                     "details_url": odhod["request-details-url"],
                     "tickets_url": odhod.get("request-tickets-url"),
@@ -69,7 +78,10 @@ class Scraper():
                     "destination_station_name": odhod["naziv-prihoda"],
                     "duration": (odhod["cas-voznje"].split(" ")[0]),
                     "online_ticket_avalible": odhod["nakup-mozen"],
-                    "url": response.url
+                    "url": response.url,
+                    "route_name": details_list[0][8:],
+                    "agency": details_list[1],
+                    "intermittent_stations": [([item[:-5], item[-5:]] if item[-5].isnumeric() else [item[:-4], item[-4:]]) for item in details_list[2:]]
             }
 
     def get_arriva_station_id(self, stationId):
@@ -108,7 +120,7 @@ class Scraper():
         data = self.get_connection_data(fromId, toId, date)
         for connection in data:
             if connection["departure"] == date.strftime("%H:%M"):
-                return connection 
+                return connection
 
 class Connector:
 
@@ -116,17 +128,11 @@ class Connector:
 
     api_endpoint = "http://localhost:8080/otp/routers/default"
 
-    def get_connections(self, fromPlace, toPlace, date, time,
-            arriveBy="", intermediatePlaces="", maxHours="", maxPreTransitTime="", maxTransfers="", maxWalkDistance="", minTransferTime="", bikeSpeed="", mode="", optimize="", pathComparator="",
-            preferredAgencies="", preferredRoutes="", showIntermediateStops="", triangleSafetyFactor="", triangleSlopeFactor="", triangleTimeFactor="", unpreferredAgencies="", 
-            unpreferredRoutes="", waitAtBeginningFactor="", waitReluctance="", walkReluctance="", walkSpeed="", wheelchair="", whiteListedAgencies="", whiteListedRoutes="", 
-            startTransitStopId="", startTransitTripId=""):
-
-        params = locals()
-        params.pop("self")
-
+    def get_connections(self, params):
 
         response = requests.get(self.api_endpoint + "/plan", params = params)
+
+        print(response)
 
         data = response.json()
 
@@ -137,10 +143,9 @@ class Connector:
             for leg in itinerarie["legs"]:
                 if leg["mode"] == "BUS":
                     connection = self.scraper.connection_exists(leg["from"]["stopId"].split(":")[1], leg["to"]["stopId"].split(":")[1], datetime.fromtimestamp(leg["startTime"]/1000))
-                    if connection: 
+                    if connection:
                         leg["checked"] = True
                         leg["connection_checked_data"] = connection
         return data
-c = Connector()
-print(c.get_connections("45.75806222125841,14.056676864624023", "46.09314451433808,14.676511287689209", "07:05:2022", "17:32"))
-print(time.time()-start)
+
+print("Processing time: ",time.time()-start)
