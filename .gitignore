@@ -1,2 +1,5 @@
 password
 archive/
+*.pyc
+__pycache__/connector.cpython-39.pyc
+__pycache__/app.cpython-39.pyc

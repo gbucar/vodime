@@ -36,7 +36,7 @@ class Scraper():
                 continue
             data_odhod = json.loads(odhod["data-args"])
 
-            yield =  {
+            yield {
                     "details_url": None,
                     "tickets_url": None,
                     "arrival": data_odhod["ROD_IPRI"],
