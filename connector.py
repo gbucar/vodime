@@ -5,6 +5,7 @@ from itertools import chain
 import json
 import pymongo
 import time
+import pytz
 
 start = time.time()
 
@@ -96,7 +97,6 @@ class Scraper():
     def get_connection_data(self, fromId, toId, date):
 
         connection_from_database = self.get_connection_data_from_database(fromId, toId, date)
-        print(connection_from_database)
 
         if connection_from_database:
             return connection_from_database["connections"]
@@ -108,7 +108,7 @@ class Scraper():
             "toId": toId,
             "date": date.strftime("%d:%m:%Y"),
             "connections": data,
-            "timestamp": datetime.now().timestamp()
+            "timestamp": datetime.now(pytz.utc).timestamp()
         })
 
         return data
@@ -134,8 +134,6 @@ class Connector:
 
         response = requests.get(self.api_endpoint + "/plan", params = params)
 
-        print(response)
-
         data = response.json()
 
         return self.check_response_data(data)
@@ -144,7 +142,7 @@ class Connector:
         for itinerarie in data["plan"]["itineraries"]:
             for leg in itinerarie["legs"]:
                 if leg["mode"] == "BUS":
-                    connection = self.scraper.connection_exists(leg["from"]["stopId"].split(":")[1], leg["to"]["stopId"].split(":")[1], datetime.fromtimestamp(leg["startTime"]/1000))
+                    connection = self.scraper.connection_exists(leg["from"]["stopId"].split(":")[1], leg["to"]["stopId"].split(":")[1], datetime.fromtimestamp(leg["startTime"]/1000).replace(tzinfo=pytz.timezone("Europe/Ljubljana")))
                     if connection:
                         leg["checked"] = True
                         leg["connection_checked_data"] = connection
