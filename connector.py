@@ -120,6 +120,7 @@ class Scraper():
     def connection_exists(self, fromId, toId, date):
         data = self.get_connection_data(fromId, toId, date)
         for connection in data:
+            print(connection["departure"], date.strftime("%H:%M"), date.timestamp()*1000)
             if connection["departure"] == date.strftime("%H:%M"):
                 return connection
 
@@ -141,10 +142,9 @@ class Connector:
         for itinerarie in data["plan"]["itineraries"]:
             for leg in itinerarie["legs"]:
                 if leg["mode"] == "BUS":
-                    connection = self.scraper.connection_exists(leg["from"]["stopId"].split(":")[1], leg["to"]["stopId"].split(":")[1], datetime.fromtimestamp(leg["startTime"]/1000).astimezone(pytz.timezone("Europe/Ljubljana")))
+                    print(leg["from"]["departure"])
+                    connection = self.scraper.connection_exists(leg["from"]["stopId"].split(":")[1], leg["to"]["stopId"].split(":")[1], datetime.fromtimestamp(leg["from"]["arrival"]/1000).astimezone(pytz.timezone("Europe/Ljubljana")))
                     if connection:
                         leg["checked"] = True
                         leg["connection_checked_data"] = connection
         return data
-
-            if connection["departure"] == date.strftime("%H:%M"):
