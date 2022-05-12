@@ -120,7 +120,6 @@ class Scraper():
     def connection_exists(self, fromId, toId, date):
         data = self.get_connection_data(fromId, toId, date)
         for connection in data:
-            print(connection["departure"], date.strftime("%H:%M"))
             if connection["departure"] == date.strftime("%H:%M"):
                 return connection
 
@@ -148,4 +147,4 @@ class Connector:
                         leg["connection_checked_data"] = connection
         return data
 
-print("Processing time: ",time.time()-start)
+            if connection["departure"] == date.strftime("%H:%M"):
