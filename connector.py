@@ -96,6 +96,7 @@ class Scraper():
     def get_connection_data(self, fromId, toId, date):
 
         connection_from_database = self.get_connection_data_from_database(fromId, toId, date)
+        print(connection_from_database)
 
         if connection_from_database:
             return connection_from_database["connections"]
@@ -119,6 +120,7 @@ class Scraper():
     def connection_exists(self, fromId, toId, date):
         data = self.get_connection_data(fromId, toId, date)
         for connection in data:
+            print(connection["departure"], date.strftime("%H:%M"))
             if connection["departure"] == date.strftime("%H:%M"):
                 return connection
 
