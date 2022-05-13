@@ -141,12 +141,15 @@ class Connector:
     def check_response_data(self, data):
         for itinerarie in data["plan"]["itineraries"]:
             for leg in itinerarie["legs"]:
+                print(leg)
                 if leg["mode"] == "BUS":
-                    print(leg["from"]["departure"])
-                    connection = self.scraper.connection_exists(leg["from"]["stopId"].split(":")[1], leg["to"]["stopId"].split(":")[1], datetime.fromtimestamp(leg["from"]["arrival"]/1000).astimezone(pytz.timezone("Europe/Ljubljana")))
+
+                    fromId = leg["from"]["stopId"].split(":")[1]
+                    toId = leg["to"]["stopId"].split(":")[1]
+                    date = datetime.fromtimestamp(leg["from"]["departure"]/1000).astimezone(pytz.timezone("Europe/Ljubljana"))
+                    connection = self.scraper.connection_exists(fromId, toId, date)
+
                     if connection:
                         leg["checked"] = True
                         leg["connection_checked_data"] = connection
         return data
-
-
