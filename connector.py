@@ -142,7 +142,13 @@ class Connector:
         for itinerarie in data["plan"]["itineraries"]:
             for leg in itinerarie["legs"]:
                 if leg["mode"] == "BUS":
-                    connection = self.scraper.connection_exists(leg["from"]["stopId"].split(":")[1], leg["to"]["stopId"].split(":")[1], datetime.fromtimestamp(leg["startTime"]/1000).astimezone(pytz.timezone("Europe/Ljubljana")))
+
+                    datetime = datetime.fromtimestamp(leg["startTime"]/1000).astimezone(pytz.timezone("Europe/Ljubljana"))
+                    fromId = leg["from"]["stopId"].split(":")[1]
+                    toId = leg["to"]["stopId"].split(":")[1]
+
+                    connection = self.scraper.connection_exists(fromId, toId, datetime)
+
                     if connection:
                         leg["checked"] = True
                         leg["connection_checked_data"] = connection
