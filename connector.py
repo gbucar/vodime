@@ -120,7 +120,6 @@ class Scraper():
     def connection_exists(self, fromId, toId, date):
         data = self.get_connection_data(fromId, toId, date)
         for connection in data:
-            print(connection["departure"], date.strftime("%H:%M"), date.timestamp()*1000)
             if connection["departure"] == date.strftime("%H:%M"):
                 return connection
 
@@ -141,7 +140,6 @@ class Connector:
     def check_response_data(self, data):
         for itinerarie in data["plan"]["itineraries"]:
             for leg in itinerarie["legs"]:
-                print(leg)
                 if leg["mode"] == "BUS":
 
                     fromId = leg["from"]["stopId"].split(":")[1]
